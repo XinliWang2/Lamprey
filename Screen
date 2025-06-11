@@ -1,0 +1,35 @@
+##Download gff/gtf file from NCBI
+less -S genomic.gff | awk '{print $3,$8,$9}' > ..._intron_phase.txt
+grep 'CDS' ...intron_phase.txt > intron_phase.csv
+##Screening genes which have an 0-0-0-0 exon-intron phases in the coding region
+gff <- read.csv(file=".../intron_phase.csv",
+                header = 1)
+colnames(gff) <- c("gene","phase")
+ex1 <- union(gff$gene,gff$phase)
+QQ <- gff$gene[!duplicated(gff$gene)]
+df1 <- matrix(NA,nrow = length(QQ),ncol = 2)
+for (i in 1:length(QQ)) {
+  a <- gff[gff$gene ==QQ[i],]
+  df1[i,1] <- as.character(a[1,1])
+  df1[i,2] <- paste(a[,2],collapse = ",")
+}
+colnames(df1) <- c("gene","phase")
+write.csv(df1,file = "gene_intronphase.csv")
+df2 <- read.csv(file = "gene_intronphase.csv", header = T)
+df2 <- df2[,-1]
+df3 <- df2[df2$phase == '0,0,0,0,0',]
+df4 <- df2[df2$phase == '0,0,0,0,1',]
+df5 <- df2[df2$phase == '0,0,0,0,2',]
+df_rbind <- rbind(df3,df4,df5)
+df_rbind <- df_rbind[,-1]
+write.csv(df3,file = "gene_intronphase_filter50_1.csv")
+write.csv(df4,file = "gene_intronphase_filter501_1.csv")
+write.csv(df4,file = "gene_intronphase_filter502_1.csv")
+write.csv(df_rbind,file = "gene_intronphase_filter40_5exon.csv")
+df6 <- read.csv(file = "../transcript_gene.csv",header = 1)
+#colnames(df6) <- c("chr","Gnomon","mRNA","start","end","unkonw","strand","unkonwn2","gene","mran","Dbxref_genebank","Name","end_range","exception","gbkey","geneID","inference", "model_evidance","partial","product","transcript_id")
+df7 <- df6[!duplicated(df6$"gene"),]
+colnames(df6)
+colnames(df_rbind)[1] <- "transcript"
+df8 <- merge(df_rbind,df6,by="transcript")
+write.csv(df8,file = "intronphase_filter.csv")
